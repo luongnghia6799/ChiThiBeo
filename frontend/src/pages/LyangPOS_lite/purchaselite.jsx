@@ -109,6 +109,7 @@ const PurchaseLite = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState(null);
   const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+  const [litePartnerActionMenu, setLitePartnerActionMenu] = useState({ isOpen: false, x: 0, y: 0, partner: null });
   const [contextMenu, setContextMenu] = useState(null);
   const [isQuickDebtOpen, setIsQuickDebtOpen] = useState(false);
   const [isQuickVoucherOpen, setIsQuickVoucherOpen] = useState(false);
@@ -1389,7 +1390,11 @@ const PurchaseLite = () => {
               ) : (
                 <div 
                   className="flex items-center justify-between gap-3 w-full bg-[var(--lite-input-bg)] px-2.5 py-1 border border-[var(--lite-border)] rounded-lg cursor-pointer select-none"
-                  onDoubleClick={() => handleEditPartner(selectedPartner)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setLitePartnerActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, partner: selectedPartner });
+                  }}
                   title="Nhấp đúp để sửa thông tin"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">

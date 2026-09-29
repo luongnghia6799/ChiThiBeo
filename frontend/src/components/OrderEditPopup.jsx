@@ -90,6 +90,9 @@ export default function OrderEditPopup({ order, partner, onClose, onSave }) {
     }, [totalAmount, paymentMethod]);
     const oldDebt = useMemo(() => {
         if (!loadedPartner) return 0;
+        if (order.old_debt !== undefined && order.old_debt !== null) {
+            return Number(order.old_debt);
+        }
         let base = loadedPartner.debt_balance || 0;
         if (order.payment_method === 'Debt') {
             if (order.type === 'Sale') base -= order.total_amount;
@@ -659,6 +662,12 @@ export default function OrderEditPopup({ order, partner, onClose, onSave }) {
                             <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/15 space-y-3 shrink-0">
                                 {isOpeningDebt ? null : (
                                     <>
+                                        {loadedPartner && (
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Nợ trước đơn</span>
+                                                <span className="text-sm font-black text-slate-700 dark:text-slate-300 tabular-nums">{formatNumber(oldDebt)}đ</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between items-center px-1">
                                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng cộng</span>
                                             <span className="text-2xl font-black text-slate-800 dark:text-white">{formatNumber(totalAmount)}đ</span>
@@ -669,6 +678,14 @@ export default function OrderEditPopup({ order, partner, onClose, onSave }) {
                                                 {formatNumber(totalAmount - amountPaid)}đ
                                             </span>
                                         </div>
+                                        {paymentMethod === 'Debt' && loadedPartner && (
+                                            <div className="flex justify-between items-center px-1 pt-2 border-t border-slate-200/60 dark:border-white/10">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Nợ sau đơn</span>
+                                                <span className="text-base font-black text-amber-600 dark:text-amber-400 tabular-nums">
+                                                    {formatNumber(order.type === 'Sale' ? (oldDebt + (totalAmount - amountPaid)) : (oldDebt - (totalAmount - amountPaid)))}đ
+                                                </span>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                                 <button

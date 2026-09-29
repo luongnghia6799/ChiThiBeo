@@ -24,6 +24,7 @@ import PartnerInfoHoverCard from '../../components/PartnerInfoHoverCard';
 import CustomSelect from '../../components/CustomSelect';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import PriceRaiseModal from '../../components/PriceRaiseModal';
+import ActionContextMenu from '../../components/ActionContextMenu';
 import LyangLogo from '../../assets/logo.png';
 
 import { useProductData, usePartnerData } from '../../queries/useProductData';
@@ -217,6 +218,8 @@ export default function Purchase() {
     // Price Raise Warning States
     const [priceRaiseItems, setPriceRaiseItems] = useState([]);
     const [isPriceRaiseModalOpen, setIsPriceRaiseModalOpen] = useState(false);
+    const [purchaseProductActionMenu, setPurchaseProductActionMenu] = useState({ isOpen: false, x: 0, y: 0, product: null, cartItem: null, cartIndex: null });
+    const [purchasePartnerActionMenu, setPurchasePartnerActionMenu] = useState({ isOpen: false, x: 0, y: 0, partner: null });
     const [dismissedPriceRaises, setDismissedPriceRaises] = useState({}); // { [productId]: price }
 
     const checkPriceRaiseAlert = (itemsToCheck, force = false) => {
@@ -1872,11 +1875,13 @@ export default function Purchase() {
                                         setIsPartnerHovered(false);
                                         setIsPartnerDropdownOpen(true);
                                     }}
-                                    onDoubleClick={(e) => {
+                                    onContextMenu={(e) => {
                                         if (selectedPartner) {
+                                            e.preventDefault();
                                             e.stopPropagation();
-                                            setEditingPartner(selectedPartner);
-                                            setIsPartnerEditModalOpen(true);
+                                            setIsPartnerDropdownOpen(false);
+                                            setIsPartnerHovered(false);
+                                            setPurchasePartnerActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, partner: selectedPartner });
                                         }
                                     }}
                                     onChange={(e) => {
@@ -2627,10 +2632,11 @@ export default function Purchase() {
                                                 {/* Dòng Tìm Kiếm Sản Phẩm - Relocated for Better Workflow */}
                                                 <tr
                                                     className="bg-[#8b6f47]/[0.035] dark:bg-[#d4a574]/[0.03] backdrop-blur-md sticky top-[42px] z-[150] hover:z-[1000] focus-within:z-[2001] border-b border-[#8b6f47]/20 dark:border-[#d4a574]/20 transition-all hover:bg-[#8b6f47]/[0.06] dark:hover:bg-[#d4a574]/[0.06] shadow-[0_4px_20px_rgba(139,111,71,0.08),0_0_15px_rgba(139,111,71,0.05)] dark:shadow-[0_4px_20px_rgba(212,165,116,0.1),0_0_15px_rgba(212,165,116,0.06)] group/working-row cursor-pointer"
-                                                    onDoubleClick={() => {
+                                                    onContextMenu={(e) => {
                                                         if (workingItem.product) {
-                                                            setEditingProduct(workingItem.product);
-                                                            setIsEditModalOpen(true);
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPurchaseProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: workingItem.product });
                                                         }
                                                     }}
                                                 >
@@ -2774,9 +2780,10 @@ export default function Purchase() {
                                                                                             });
                                                                                             setSearchTerm(p.name);
                                                                                         }}
-                                                                                        onDoubleClick={() => {
-                                                                                            setEditingProduct(p);
-                                                                                            setIsEditModalOpen(true);
+                                                                                        onContextMenu={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            e.stopPropagation();
+                                                                                            setPurchaseProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p });
                                                                                         }}
                                                                                         className={cn(
                                                                                             "dropdown-item flex justify-between items-center",
@@ -3092,11 +3099,12 @@ export default function Purchase() {
                                                                         ? "z-[3500] bg-white/5 dark:bg-slate-800/20"
                                                                         : "z-[50] hover:z-[3000] group-hover/price:z-[4000] focus-within:z-[3000] bg-transparent hover:bg-white/5 dark:hover:bg-slate-800/5"
                                                                 )}
-                                                                onDoubleClick={() => {
+                                                                onContextMenu={(e) => {
                                                                     const p = products.find(prod => prod.id === item.product_id);
                                                                     if (p) {
-                                                                        setEditingProduct(p);
-                                                                        setIsEditModalOpen(true);
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setPurchaseProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p, cartItem: item, cartIndex: idx });
                                                                     }
                                                                 }}
                                                             >
@@ -3104,12 +3112,12 @@ export default function Purchase() {
                                                                 <td className="py-2 px-2 relative">
                                                                     <div
                                                                         className="relative group/search-row"
-                                                                        onDoubleClick={(e) => {
-                                                                            e.preventDefault();
+                                                                        onContextMenu={(e) => {
                                                                             const p = products.find(prod => prod.id === item.product_id);
                                                                             if (p) {
-                                                                                setEditingProduct(p);
-                                                                                setIsEditModalOpen(true);
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                setPurchaseProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p, cartItem: item, cartIndex: idx });
                                                                             }
                                                                         }}
                                                                     >
@@ -3326,12 +3334,12 @@ export default function Purchase() {
                                                                                         text={item.product_name}
                                                                                         className="text-[17px] font-black tracking-tight leading-relaxed text-emerald-900 dark:text-emerald-300"
                                                                                         title={item.product_name}
-                                                                                        onDoubleClick={(e) => {
-                                                                                            e.preventDefault();
+                                                                                        onContextMenu={(e) => {
                                                                                             const p = products.find(prod => prod.id === item.product_id);
                                                                                             if (p) {
-                                                                                                setEditingProduct(p);
-                                                                                                setIsEditModalOpen(true);
+                                                                                                e.preventDefault();
+                                                                                                e.stopPropagation();
+                                                                                                setPurchaseProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p, cartItem: item, cartIndex: idx });
                                                                                             }
                                                                                         }}
                                                                                     />
@@ -5650,25 +5658,34 @@ export default function Purchase() {
                         playPopSound();
                         setToast({ message: `Đã thêm ${prod.name} vào đơn nhập`, type: "success" });
                     }}
-                    onEditOrder={(order) => {
+                    onEditOrder={async (order) => {
                         setIsHistoryPanelOpen(false);
-                        setEditingOriginalOrder(order);
-                        setEditOrderId(order.id);
-                        if (order.partner) {
-                            setSelectedPartner(order.partner);
-                        } else if (order.partner_id) {
-                            const foundPartner = (suppliers || partners || []).find(p => p.id === order.partner_id);
+                        let orderObj = order;
+                        if (orderObj?.id) {
+                            try {
+                                const res = await axios.get(`/api/orders/${orderObj.id}`);
+                                if (res.data) orderObj = res.data;
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+                        setEditingOriginalOrder(orderObj);
+                        setEditOrderId(orderObj.id);
+                        if (orderObj.partner) {
+                            setSelectedPartner(orderObj.partner);
+                        } else if (orderObj.partner_id) {
+                            const foundPartner = (suppliers || partners || []).find(p => p.id === orderObj.partner_id);
                             setSelectedPartner(foundPartner || {
-                                id: order.partner_id,
-                                name: order.partner_name,
-                                phone: order.partner_phone,
-                                address: order.partner_address
+                                id: orderObj.partner_id,
+                                name: orderObj.partner_name,
+                                phone: orderObj.partner_phone,
+                                address: orderObj.partner_address
                             });
                         } else {
                             setSelectedPartner(null);
                         }
-                        if (order.details && Array.isArray(order.details)) {
-                            setCart(order.details.map(d => ({
+                        if (orderObj.details && Array.isArray(orderObj.details)) {
+                            setCart(orderObj.details.map(d => ({
                                 product_id: d.product_id,
                                 product_name: d.product_name || d.product?.name,
                                 unit: d.unit || d.product?.unit || 'Cái',
@@ -5682,11 +5699,11 @@ export default function Purchase() {
                                 expiry_date: d.expiry_date || null
                             })));
                         }
-                        setPaymentMethod(order.payment_method || 'Cash');
-                        setAmountPaid(order.amount_paid || 0);
-                        setNote(order.note || '');
+                        setPaymentMethod(orderObj.payment_method || 'Cash');
+                        setAmountPaid(orderObj.amount_paid || 0);
+                        setNote(orderObj.note || '');
                         playPopSound();
-                        setToast({ message: `Đã nạp đơn #${order.display_id || order.id} ra màn hình nhập`, type: "success" });
+                        setToast({ message: `Đã nạp đơn #${orderObj.display_id || orderObj.id} ra màn hình nhập`, type: "success" });
                     }}
                     onDeleteOrder={async (orderId) => {
                         try {
@@ -5718,25 +5735,34 @@ export default function Purchase() {
                     onClose={() => setIsDailyHistoryOpen(false)}
                     type="Purchase"
                     settings={settings}
-                    onEditOrder={(order) => {
+                    onEditOrder={async (order) => {
                         setIsDailyHistoryOpen(false);
-                        setEditingOriginalOrder(order);
-                        setEditOrderId(order.id);
-                        if (order.partner) {
-                            setSelectedPartner(order.partner);
-                        } else if (order.partner_id) {
-                            const foundPartner = (suppliers || partners || []).find(p => p.id === order.partner_id);
+                        let orderObj = order;
+                        if (orderObj?.id) {
+                            try {
+                                const res = await axios.get(`/api/orders/${orderObj.id}`);
+                                if (res.data) orderObj = res.data;
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+                        setEditingOriginalOrder(orderObj);
+                        setEditOrderId(orderObj.id);
+                        if (orderObj.partner) {
+                            setSelectedPartner(orderObj.partner);
+                        } else if (orderObj.partner_id) {
+                            const foundPartner = (suppliers || partners || []).find(p => p.id === orderObj.partner_id);
                             setSelectedPartner(foundPartner || {
-                                id: order.partner_id,
-                                name: order.partner_name,
-                                phone: order.partner_phone,
-                                address: order.partner_address
+                                id: orderObj.partner_id,
+                                name: orderObj.partner_name,
+                                phone: orderObj.partner_phone,
+                                address: orderObj.partner_address
                             });
                         } else {
                             setSelectedPartner(null);
                         }
-                        if (order.details && Array.isArray(order.details)) {
-                            setCart(order.details.map(d => ({
+                        if (orderObj.details && Array.isArray(orderObj.details)) {
+                            setCart(orderObj.details.map(d => ({
                                 product_id: d.product_id,
                                 product_name: d.product_name || d.product?.name,
                                 unit: d.unit || d.product?.unit || 'Cái',
@@ -5799,6 +5825,117 @@ export default function Purchase() {
                     )}
                 </AnimatePresence>
             </div>
+        
+                {/* Context Menu cho Sản phẩm trong Purchase */}
+                <ActionContextMenu
+                    isOpen={purchaseProductActionMenu.isOpen}
+                    position={{ x: purchaseProductActionMenu.x, y: purchaseProductActionMenu.y }}
+                    onClose={() => setPurchaseProductActionMenu(prev => ({ ...prev, isOpen: false }))}
+                    title={purchaseProductActionMenu.product?.name || "Sản phẩm"}
+                    subtitle={`Mã: ${purchaseProductActionMenu.product?.code || '---'} • ĐVT: ${purchaseProductActionMenu.product?.unit || '---'}`}
+                    badge={purchaseProductActionMenu.product?.category || "Sản phẩm"}
+                    badgeColor="emerald"
+                    items={[
+                        {
+                            label: "Sửa thông tin sản phẩm",
+                            sublabel: "Xem và chỉnh sửa giá, mã, thông số",
+                            icon: Package,
+                            color: "emerald",
+                            onClick: () => {
+                                if (purchaseProductActionMenu.product) {
+                                    setEditingProduct(purchaseProductActionMenu.product);
+                                    setIsEditModalOpen(true);
+                                }
+                            }
+                        },
+                        {
+                            label: "Sao chép tên sản phẩm",
+                            icon: Sparkles,
+                            copyText: purchaseProductActionMenu.product?.name || ""
+                        },
+                        {
+                            label: "Sao chép mã sản phẩm",
+                            icon: Bot,
+                            copyText: purchaseProductActionMenu.product?.code || ""
+                        },
+                        ...(purchaseProductActionMenu.cartIndex !== null && purchaseProductActionMenu.cartIndex !== undefined ? [
+                            { divider: true },
+                            {
+                                label: "Xóa khỏi danh sách nhập",
+                                sublabel: "Bỏ sản phẩm này khỏi đơn hiện tại",
+                                icon: Trash2,
+                                danger: true,
+                                onClick: () => {
+                                    if (purchaseProductActionMenu.cartIndex !== null) {
+                                        removeFromCart(purchaseProductActionMenu.cartIndex);
+                                        playPopSound();
+                                    }
+                                }
+                            }
+                        ] : [])
+                    ]}
+                />
+
+                {/* Context Menu cho Đối tác / Nhà cung cấp trong Purchase */}
+                <ActionContextMenu
+                    isOpen={purchasePartnerActionMenu.isOpen}
+                    position={{ x: purchasePartnerActionMenu.x, y: purchasePartnerActionMenu.y }}
+                    onClose={() => setPurchasePartnerActionMenu(prev => ({ ...prev, isOpen: false }))}
+                    title={purchasePartnerActionMenu.partner?.name || "Nhà cung cấp"}
+                    subtitle={`SĐT: ${purchasePartnerActionMenu.partner?.phone || '---'} • Nợ: ${formatDebt(purchasePartnerActionMenu.partner?.debt_balance || 0)}`}
+                    badge="Nhà cung cấp"
+                    badgeColor="amber"
+                    items={[
+                        {
+                            label: "Sửa thông tin nhà cung cấp",
+                            sublabel: "Cập nhật tên, SĐT, địa chỉ, công nợ",
+                            icon: User,
+                            color: "amber",
+                            onClick: () => {
+                                if (purchasePartnerActionMenu.partner) {
+                                    setEditingPartner(purchasePartnerActionMenu.partner);
+                                    setIsPartnerEditModalOpen(true);
+                                }
+                            }
+                        },
+                        {
+                            label: "Lịch sử giao dịch & Công nợ",
+                            sublabel: "Xem tất cả phiếu nhập & trả nợ",
+                            icon: History,
+                            color: "blue",
+                            onClick: () => {
+                                if (purchasePartnerActionMenu.partner) {
+                                    setHistoryPartner(purchasePartnerActionMenu.partner);
+                                    setIsPartnerHistoryOpen(true);
+                                }
+                            }
+                        },
+                        { divider: true },
+                        {
+                            label: "Sao chép số điện thoại",
+                            icon: Phone,
+                            copyText: purchasePartnerActionMenu.partner?.phone || ""
+                        },
+                        {
+                            label: "Sao chép tên nhà cung cấp",
+                            icon: User,
+                            copyText: purchasePartnerActionMenu.partner?.name || ""
+                        },
+                        { divider: true },
+                        {
+                            label: "Bỏ chọn nhà cung cấp",
+                            sublabel: "Hủy đối tác hiện tại trên đơn nhập",
+                            icon: X,
+                            danger: true,
+                            onClick: () => {
+                                setSelectedPartner(null);
+                                setPartnerSearch('');
+                                playPopSound();
+                            }
+                        }
+                    ]}
+                />
+
         </MotionConfig>
     );
 }

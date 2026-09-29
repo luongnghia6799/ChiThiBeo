@@ -26,7 +26,8 @@ const $l = DialogPrimitive.Close;
 const Hl = DialogPrimitive.Title;
 const Kl = DialogPrimitive.Description;
 import { motion as x, useMotionValue as In, useSpring as Dn, MotionConfig as ro, AnimatePresence as Ws } from "framer-motion";
-import { ReceiptText as ReceiptTextIcon, FileText as FileTextIcon, Copy as Pn, Trash2 as so, User as Qn, X as Xn, Phone as Jn, MapPin as Yn, Plus as Zn, ChevronRight as no, FileText as ei, Pause as io, ChevronLeft as lo, Users as oo, History as ti, Menu as co, Bot as En, Eye as po, Tv as qr, Volume2 as la, ShoppingCart as uo, Bell as mo, PanelRight as xo, PanelBottom as ho, TrendingUp as bo, Satellite as go, Coins as Rs, Zap as fo, Search as yo, PackageX as vo, TriangleAlert as As, Package as ko, RefreshCcw as wo, RotateCcw as jo, TrendingDown as _o, CircleAlert as No, Droplets as Co, Check as Os, Sparkles as Es, Activity as So, Sprout as To, Wallet as zo, Truck as Io, Banknote as Do, CreditCard as Po, ArrowLeftRight as Eo, ArrowRight as qo, ShoppingBag as Mo, Save as Wo, Printer as Ro, Clock as Ao, LoaderCircle as ai, Leaf as ri, BookOpen as Oo, ReceiptText as Lo, BadgePercent as $o, HandCoins as Ho, RotateCw as Ko, Minus as Go, VolumeX as Uo, Camera as Bo, Calendar as Fo, CircleCheck as Vo, PackageSearch as Qo, ExternalLink as Xo, EyeOff as Jo, Bone as Yo, Settings as SetIcon, MessageSquareQuote as MsgQuote, Music as MuIcon, Radio as RadioIcon, Keyboard as KeybIcon, Sliders as SlidersIcon, Palette } from "lucide-react";
+import { ReceiptText as ReceiptTextIcon, FileText as FileTextIcon, Copy as Pn, Trash2 as so, User as Qn, X as Xn, Phone as Jn, MapPin as Yn, Plus as Zn, ChevronRight as no, FileText as ei, Pause as io, ChevronLeft as lo, Users as oo, History as ti, Menu as co, Bot as En, Eye as po, Tv as qr, Volume2 as la, ShoppingCart as uo, Bell as mo, PanelRight as xo, PanelBottom as ho, TrendingUp as bo, Satellite as go, Coins as Rs, Zap as fo, Search as yo, PackageX as vo, TriangleAlert as As, Package as ko, RefreshCcw as wo, RotateCcw as jo, TrendingDown as _o, CircleAlert as No, Droplets as Co, Check as Os, Sparkles as Es, Activity as So, Sprout as To, Wallet as zo, Truck as Io, Banknote as Do, CreditCard as Po, ArrowLeftRight as Eo, ArrowRight as qo, ShoppingBag as Mo, Save as Wo, Printer as Ro, Clock as Ao, LoaderCircle as ai, Leaf as ri, BookOpen as Oo, ReceiptText as Lo, BadgePercent as $o, HandCoins as Ho, RotateCw as Ko, Minus as Go, VolumeX as Uo, Camera as Bo, Calendar as Fo, CircleCheck as Vo, PackageSearch as Qo, ExternalLink as Xo, EyeOff as Jo, Bone as Yo, Settings as SetIcon, MessageSquareQuote as MsgQuote, Music as MuIcon, Radio as RadioIcon, Keyboard as KeybIcon, Sliders as SlidersIcon, Palette, Edit2 as Edit2Icon, Tag as TagIcon } from "lucide-react";
+import ActionContextMenu from "@/components/ActionContextMenu";
 import { DEFAULT_SETTINGS as Gl } from "@/lib/settings";
 const TvMonitorIcon = qr;
 const SatelliteIcon = go;
@@ -1053,6 +1054,8 @@ function a0({
   i.useRef(null);
   const Wr = i.useRef(null),
     Rr = i.useRef(null),
+    [posProductActionMenu, setPosProductActionMenu] = i.useState(null),
+    [posPartnerActionMenu, setPosPartnerActionMenu] = i.useState(null),
     [ic, lc] = i.useState("themes"),
     [hi, Bs] = i.useState([]),
     [Ya, oc] = i.useState(() => localStorage.getItem("pos_gpu_disabled") === "true"),
@@ -2307,7 +2310,7 @@ function a0({
     Ka = async t => {
       let orderObj = t;
       if (!orderObj) return;
-      if ((!orderObj.details || orderObj.details.length === 0) && orderObj.id) {
+      if (orderObj.id) {
         try {
           const res = await M.get(`/api/orders/${orderObj.id}`);
           if (res.data) orderObj = res.data;
@@ -2423,14 +2426,26 @@ function a0({
       }));
     };
     const syncChannel = new BroadcastChannel('pos_data_sync');
-    syncChannel.onmessage = (event) => {
-      if (event.data?.type === 'SETTINGS_UPDATED') {
+    const handleSyncEvent = (type) => {
+      if (type === 'SETTINGS_UPDATED') {
         _n();
       }
+      if (type === 'ORDER_SAVED' || type === 'DATA_MUTATED') {
+        jr();
+        E.invalidateQueries({ queryKey: ["partners"] });
+      }
+    };
+    syncChannel.onmessage = (event) => {
+      handleSyncEvent(event.data?.type);
+    };
+    const handleWindowEvent = (event) => {
+      handleSyncEvent(event.detail?.type);
     };
     window.addEventListener("storage", t);
+    window.addEventListener("pos_data_sync", handleWindowEvent);
     return () => {
       window.removeEventListener("storage", t);
+      window.removeEventListener("pos_data_sync", handleWindowEvent);
       syncChannel.close();
     };
   }, []), i.useEffect(() => {
@@ -3358,8 +3373,19 @@ function a0({
                       damping: 24
                     }} className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10"><Ir className={(g === "remote_inspect" ? ze || k?.partner_name && k.partner_name !== "Khách lẻ" && k.partner_name !== "Khách bán lẻ" : p) && !Me ? "text-white shrink-0 drop-shadow-sm" : "text-[#2d5016] dark:text-[#d4a574] shrink-0"} size={15} strokeWidth={(g === "remote_inspect" ? ze || k?.partner_name && k.partner_name !== "Khách lẻ" && k.partner_name !== "Khách bán lẻ" : p) && !Me ? 2.8 : 2.5} /></x.div><input type="text" className={c("w-full pl-8 pr-7 py-1.5 h-full bg-transparent outline-none font-black text-xs text-slate-900 dark:text-white placeholder:text-muted/60 leading-normal", (g === "remote_inspect" ? ze || k?.partner_name && k.partner_name !== "Khách lẻ" && k.partner_name !== "Khách bán lẻ" : p) && !Me && "opacity-0 select-none cursor-pointer")} ref={Et} placeholder="Tìm đối tác (F3)..." value={(g === "remote_inspect" ? ze?.name || (k?.partner_name && k.partner_name !== "Khách lẻ" && k.partner_name !== "Khách bán lẻ" ? k.partner_name : "") || yt : p ? p.name : yt) || ""} onFocus={() => {
                       W(!1), Ue(!0);
-                    }} onDoubleClick={t => {
-                      g === "remote_inspect" ? ze && (t.stopPropagation(), fr(ze), Oa(!0)) : p && (t.stopPropagation(), fr(p), Oa(!0));
+                    }} onContextMenu={t => {
+                      t.preventDefault();
+                      t.stopPropagation();
+                      W(!1);
+                      Ue(!1);
+                      const curPartner = g === "remote_inspect" ? ze : p;
+                      if (curPartner) {
+                        setPosPartnerActionMenu({
+                          x: t.clientX,
+                          y: t.clientY,
+                          partner: curPartner
+                        });
+                      }
                     }} onChange={t => {
                       W(!1), Ge(t.target.value), g !== "remote_inspect" && p && F(null), Ue(!0), rs(0);
                     }} onKeyDown={t => {
@@ -4025,8 +4051,16 @@ function a0({
                                         className="w-2.5 h-2.5 rounded-full bg-white shadow-sm ring-1 ring-black/10"
                                       />
                                     </div>
-                                  </x.button></div></th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Đơn vị</th><th className="py-2 px-2 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap"><div className="flex flex-col items-center justify-center leading-tight"><span>Quy đổi</span><span className={c("text-[10px] font-mono tabular-nums transition-colors mt-0.5", dl > 0 ? "text-[#8b6f47] dark:text-[#d4a574] font-black" : "text-[#8b6f47]/40 dark:text-[#d4a574]/40 font-normal")}>{dl > 0 ? z(dl) : "—"}</span></div></th><th className="py-2 px-2 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap"><div className="flex flex-col items-center justify-center leading-tight"><span>Số lượng</span><span className={c("text-[10px] font-mono tabular-nums transition-colors mt-0.5", ol > 0 ? "text-primary dark:text-emerald-400 font-black" : "text-[#8b6f47]/40 dark:text-[#d4a574]/40 font-normal")}>{ol > 0 ? z(ol) : "—"}</span></div></th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Đơn giá</th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Thành tiền</th><th className="py-2.5 px-2 text-center align-middle" /></tr></thead><tbody className="divide-none"><tr className="bg-[#8b6f47]/[0.035] dark:bg-[#d4a574]/[0.03] backdrop-blur-md sticky top-[42px] z-[150] hover:z-[1000] focus-within:z-[2001] border-b border-[#8b6f47]/20 dark:border-[#d4a574]/20 transition-all hover:bg-[#8b6f47]/[0.06] dark:hover:bg-[#d4a574]/[0.06] shadow-[0_4px_20px_rgba(139,111,71,0.08),0_0_15px_rgba(139,111,71,0.05)] dark:shadow-[0_4px_20px_rgba(212,165,116,0.1),0_0_15px_rgba(212,165,116,0.06)] group/working-row" onDoubleClick={() => {
-                            m.product && (Vt(m.product), vt(!0));
+                                  </x.button></div></th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Đơn vị</th><th className="py-2 px-2 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap"><div className="flex flex-col items-center justify-center leading-tight"><span>Quy đổi</span><span className={c("text-[10px] font-mono tabular-nums transition-colors mt-0.5", dl > 0 ? "text-[#8b6f47] dark:text-[#d4a574] font-black" : "text-[#8b6f47]/40 dark:text-[#d4a574]/40 font-normal")}>{dl > 0 ? z(dl) : "—"}</span></div></th><th className="py-2 px-2 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap"><div className="flex flex-col items-center justify-center leading-tight"><span>Số lượng</span><span className={c("text-[10px] font-mono tabular-nums transition-colors mt-0.5", ol > 0 ? "text-primary dark:text-emerald-400 font-black" : "text-[#8b6f47]/40 dark:text-[#d4a574]/40 font-normal")}>{ol > 0 ? z(ol) : "—"}</span></div></th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Đơn giá</th><th className="py-2.5 px-3 text-center align-middle font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574] whitespace-nowrap">Thành tiền</th><th className="py-2.5 px-2 text-center align-middle" /></tr></thead><tbody className="divide-none"><tr className="bg-[#8b6f47]/[0.035] dark:bg-[#d4a574]/[0.03] backdrop-blur-md sticky top-[42px] z-[150] hover:z-[1000] focus-within:z-[2001] border-b border-[#8b6f47]/20 dark:border-[#d4a574]/20 transition-all hover:bg-[#8b6f47]/[0.06] dark:hover:bg-[#d4a574]/[0.06] shadow-[0_4px_20px_rgba(139,111,71,0.08),0_0_15px_rgba(139,111,71,0.05)] dark:shadow-[0_4px_20px_rgba(212,165,116,0.1),0_0_15px_rgba(212,165,116,0.06)] group/working-row" onContextMenu={(e) => {
+                            if (m.product) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setPosProductActionMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                product: m.product
+                              });
+                            }
                           }}><td onClick={t => {
                               t.stopPropagation(), ve && ve.length > 0 ? qn(ve, T) : Ve.error("Giỏ hàng đang trống!");
                             }} title="Bấm để đọc toàn bộ danh sách soạn hàng" className="py-2.5 px-1 text-center cursor-pointer select-none rounded-l-xl group/speaker-td"><div className="w-8 h-8 mx-auto rounded-xl flex items-center justify-center bg-primary/10 text-primary dark:text-[#d4a574] border border-primary/20 hover:bg-primary hover:text-white dark:hover:bg-emerald-500 dark:hover:text-white hover:border-transparent hover:scale-110 active:scale-95 transition-all duration-200 shadow-xs"><Nd size={15} strokeWidth={2.5} className="group-hover/speaker-td:animate-pulse" /></div></td><td onClick={t => {
@@ -4345,9 +4379,17 @@ function a0({
                               stiffness: 300,
                               damping: 25,
                               delay: a * 0.02
-                            }} id={`cart-row-${a}`} className={c("relative transition-colors duration-200 group cursor-pointer border-b border-[#8b6f47]/10 dark:border-white/5 last:border-b-0", t.isPacked && "line-through decoration-emerald-500/30 opacity-50", Tt === a ? "z-[3500] bg-white/5 dark:bg-slate-800/20" : "z-[50] hover:z-[3000] group-hover/price:z-[4000] focus-within:z-[3000] bg-transparent")} onDoubleClick={() => {
-                              const r = T.find(s => s.id === t.product_id);
-                              r && (Vt(r), vt(!0));
+                            }} id={`cart-row-${a}`} className={c("relative transition-colors duration-200 group cursor-pointer border-b border-[#8b6f47]/10 dark:border-white/5 last:border-b-0", t.isPacked && "line-through decoration-emerald-500/30 opacity-50", Tt === a ? "z-[3500] bg-white/5 dark:bg-slate-800/20" : "z-[50] hover:z-[3000] group-hover/price:z-[4000] focus-within:z-[3000] bg-transparent")} onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const prod = T.find(s => s.id === t.product_id) || t;
+                              setPosProductActionMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                product: prod,
+                                cartItemIndex: a,
+                                cartItem: t
+                              });
                             }}><td onClick={r => {
                                 r.stopPropagation();
                                 const s = T.find(l => l.id === t.product_id) || t,
@@ -4361,10 +4403,13 @@ function a0({
                                   : speakAudioSequence([alias, qty]);
                               }} title="Bấm để đọc tên và số lượng" className="py-2 px-2 text-center tabular-nums cursor-pointer select-none rounded-l-xl group/index-td"><div className="w-7 h-7 mx-auto rounded-lg flex items-center justify-center font-black text-xs text-slate-400 dark:text-slate-500 group-hover/index-td:text-emerald-600 dark:group-hover/index-td:text-emerald-400 group-hover/index-td:bg-emerald-500/15 group-hover/index-td:border group-hover/index-td:border-emerald-500/20 group-hover/index-td:scale-110 group-hover/index-td:shadow-xs active:scale-95 transition-all duration-200">{a + 1}</div></td><td className="py-2 px-2 text-center"><button onClick={r => {
                                   r.stopPropagation(), xl(a);
-                                }} className={c("w-8 h-8 mx-auto rounded-xl flex items-center justify-center transition-all duration-200 border-2 cursor-pointer", t.isPacked ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/25 scale-105" : "bg-transparent border-slate-300/80 dark:border-white/20 text-slate-400/80 dark:text-slate-500 hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-500/10 hover:scale-110 active:scale-95 shadow-none hover:shadow-xs")}><Hn size={16} strokeWidth={3.5} className="transition-transform duration-200" /></button></td><td className="py-2 px-2 relative"><div className="relative group/search-row" onDoubleClick={r => {
-                                  r.preventDefault();
+                                }} className={c("w-8 h-8 mx-auto rounded-xl flex items-center justify-center transition-all duration-200 border-2 cursor-pointer", t.isPacked ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/25 scale-105" : "bg-transparent border-slate-300/80 dark:border-white/20 text-slate-400/80 dark:text-slate-500 hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-500/10 hover:scale-110 active:scale-95 shadow-none hover:shadow-xs")}><Hn size={16} strokeWidth={3.5} className="transition-transform duration-200" /></button></td><td className="py-2 px-2 relative"><div className="relative group/search-row" onContextMenu={r => {
                                   const s = T.find(n => n.id === t.product_id);
-                                  s && (Vt(s), vt(!0));
+                                  if (s) {
+                                    r.preventDefault();
+                                    r.stopPropagation();
+                                    setPosProductActionMenu({ isOpen: true, x: r.clientX, y: r.clientY, product: s, cartItem: t, cartIndex: a });
+                                  }
                                 }}>{Tt === a ? <input type="text" autoComplete="off" autoFocus={!0} className={c("w-full h-auto py-2.5 pl-4 pr-28 bg-white/10 dark:bg-slate-800/30 rounded-xl border-0 border-transparent outline-none focus:outline-none ring-0 focus:ring-0 focus:ring-transparent focus:border-transparent focus:border-0", "text-[17px] font-black tracking-tight transition-all leading-relaxed placeholder:normal-case placeholder:leading-relaxed", "text-emerald-900 dark:text-emerald-300 placeholder:text-gray-300", t.ai_scanned && "pb-6")} value={zt} onFocus={r => {
                                     ct(a), ls(t.product_name), Ca(0), r.target.select(), r.target.scrollIntoView({
                                       block: "nearest",
@@ -4376,9 +4421,13 @@ function a0({
                                     setTimeout(() => {
                                       ct(r => r === a ? null : r);
                                     }, 200);
-                                  }} onDoubleClick={() => {
-                                    const r = T.find(s => s.id === t.product_id);
-                                    r && (Vt(r), vt(!0));
+                                  }} onContextMenu={r => {
+                                    const s = T.find(n => n.id === t.product_id);
+                                    if (s) {
+                                      r.preventDefault();
+                                      r.stopPropagation();
+                                      setPosProductActionMenu({ isOpen: true, x: r.clientX, y: r.clientY, product: s, cartItem: t, cartIndex: a });
+                                    }
                                   }} onKeyDown={r => {
                                     const s = Ba.filter(n => {
                                       const l = zt.toLowerCase(),
@@ -4499,9 +4548,6 @@ function a0({
                                       const r = document.getElementById(`row-name-${a}`);
                                       r?.focus(), r?.select?.();
                                     }, 50);
-                                  }} onDoubleClick={() => {
-                                    const r = T.find(s => s.id === t.product_id);
-                                    r && (Vt(r), vt(!0));
                                   }} className="w-full h-auto py-2 px-3 flex items-center justify-between gap-2.5 cursor-pointer group/marquee-wrap min-h-[44px]"><div className="flex-1 min-w-0 flex flex-col justify-center"><div className="flex items-center gap-2"><Ps text={t.product_name} className="text-[17px] font-black tracking-tight leading-snug text-emerald-900 dark:text-emerald-300" title={t.product_name} />{t.is_combo && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-black tracking-widest border border-amber-500/30">COMBO</span>}</div>{t.ai_scanned && <div className="mt-1 flex items-center gap-1.5 z-10">{t.ai_matched_status === "matched" ? <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black flex items-center gap-1 border border-emerald-500/20 shadow-sm w-fit"><Es size={10} className="text-emerald-500 dark:text-emerald-400 shrink-0" /><span className="truncate max-w-[320px]">{`AI Tự khớp: "${t.ai_original_name}"`}</span><button type="button" onClick={r => {
                                         r.stopPropagation();
                                         const s = [...y],
@@ -5000,7 +5046,17 @@ function a0({
                           p ? setIsHistoryPanelOpen(true) : Et.current?.focus();
                         }} className="bg-transparent p-3 rounded-2xl border border-[#8b6f47]/25 dark:border-[#d4a574]/20 shadow-sm hover:border-[#2d5016]/40 dark:hover:border-emerald-500/40 transition-colors group/partner-sidebar cursor-pointer relative overflow-hidden"><To className="absolute -right-3 -bottom-3 w-20 h-20 text-[#2d5016]/5 dark:text-emerald-400/5 -rotate-12 pointer-events-none select-none" /><div className="flex-1 min-w-0 relative z-10"><div className="flex items-center justify-between gap-2 mb-1"><div className="flex items-center gap-1.5"><span className="text-[10px] font-black text-[#8b6f47] dark:text-[#d4a574] uppercase tracking-[0.15em] whitespace-nowrap">KHÁCH HÀNG</span>{p && <span className="bg-[#2d5016]/10 dark:bg-emerald-500/15 text-[#2d5016] dark:text-emerald-300 border border-[#2d5016]/20 dark:border-emerald-500/30 text-[10px] font-black px-2 py-0.5 rounded-full">#{p.id}</span>}</div>{p && <button onClick={t => {
                                 t.stopPropagation(), setIsHistoryPanelOpen(true);
-                              }} className="w-7 h-7 rounded-full bg-[#8b6f47]/10 dark:bg-[#d4a574]/15 hover:bg-[#2d5016] hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white text-[#8b6f47] dark:text-[#d4a574] flex items-center justify-center border border-[#8b6f47]/20 transition-all cursor-pointer shrink-0 z-20 partner-popout-trigger shadow-2xs" title="Xem lịch sử giao dịch"><Ja size={13} strokeWidth={2.8} /></button>}</div><div className="font-black text-[#2d5016] dark:text-[#e8dfd5] text-lg uppercase leading-normal"><Ps text={p ? p.name : "KHÁCH BÁN LẺ"} isActive={!0} className="font-black text-[#2d5016] dark:text-[#e8dfd5] text-lg uppercase leading-normal" /></div>{p && <div className="flex flex-col gap-1.5 mt-2">{(Pe.phone || p.phone) && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Mr size={11} strokeWidth={3} className="shrink-0 text-[#8b6f47] dark:text-[#d4a574]" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={Pe.phone || p.phone || "N/A"} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}{(Pe.address || p.address) && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Us size={11} strokeWidth={3} className="shrink-0 text-emerald-600 dark:text-emerald-400" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={Pe.address || p.address} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}{p.cccd && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Comp_ca size={11} strokeWidth={3} className="shrink-0 text-indigo-500" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={`CCCD: ${p.cccd}`} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}</div>}</div>{p && <div ref={Rr} onClick={t => t.stopPropagation()} className={c("absolute right-full top-1/2 -translate-y-1/2 mr-3 w-60 p-4 rounded-2xl bg-[#fbf8f2] dark:bg-[#1c1916] shadow-2xl border-2 border-[#8b6f47]/30 dark:border-[#d4a574]/30 transition-all duration-300 z-[9999] text-left text-slate-800 dark:text-slate-100 partner-popout-container", sr ? "pointer-events-auto opacity-100 translate-x-0" : "pointer-events-none opacity-0 translate-x-2")}><div className="border-b border-[#8b6f47]/20 dark:border-[#d4a574]/20 pb-2 mb-2.5"><div className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8b6f47] dark:text-[#d4a574]">LỊCH SỬ GIAO DỊCH</div></div><div className="flex bg-[#8b6f47]/10 dark:bg-[#d4a574]/10 p-0.5 rounded-xl mb-2.5"><button onClick={() => Kt("debt")} className={c("flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all", Ne === "debt" ? "bg-white dark:bg-slate-800 text-[#2d5016] dark:text-emerald-400 shadow-sm" : "text-[#8b6f47] dark:text-[#d4a574]/70 hover:text-[#2d5016]")}>Mua nợ</button><button onClick={() => Kt("cash")} className={c("flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all", Ne === "cash" ? "bg-white dark:bg-slate-800 text-[#2d5016] dark:text-emerald-400 shadow-sm" : "text-[#8b6f47] dark:text-[#d4a574]/70 hover:text-[#2d5016]")}>Mua tiền</button></div>{Xs ? <div className="flex items-center gap-2 py-3 font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574]"><Un size={14} className="animate-spin text-[#2d5016] dark:text-emerald-400" /><span>Đang tải...</span></div> : (Ne === "debt" ? st : nt) ? <div onClick={() => {
+                              }} className="w-7 h-7 rounded-full bg-[#8b6f47]/10 dark:bg-[#d4a574]/15 hover:bg-[#2d5016] hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white text-[#8b6f47] dark:text-[#d4a574] flex items-center justify-center border border-[#8b6f47]/20 transition-all cursor-pointer shrink-0 z-20 partner-popout-trigger shadow-2xs" title="Xem lịch sử giao dịch"><Ja size={13} strokeWidth={2.8} /></button>}</div><div onContextMenu={(e) => {
+                                if (p) {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setPosPartnerActionMenu({
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                    partner: p
+                                  });
+                                }
+                              }} className="font-black text-[#2d5016] dark:text-[#e8dfd5] text-lg uppercase leading-normal cursor-pointer"><Ps text={p ? p.name : "KHÁCH BÁN LẺ"} isActive={!0} className="font-black text-[#2d5016] dark:text-[#e8dfd5] text-lg uppercase leading-normal" /></div>{p && <div className="flex flex-col gap-1.5 mt-2">{(Pe.phone || p.phone) && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Mr size={11} strokeWidth={3} className="shrink-0 text-[#8b6f47] dark:text-[#d4a574]" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={Pe.phone || p.phone || "N/A"} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}{(Pe.address || p.address) && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Us size={11} strokeWidth={3} className="shrink-0 text-emerald-600 dark:text-emerald-400" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={Pe.address || p.address} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}{p.cccd && <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/5 border border-[#8b6f47]/15 dark:border-white/10 px-2.5 py-1 rounded-xl w-full max-w-full overflow-hidden"><Comp_ca size={11} strokeWidth={3} className="shrink-0 text-indigo-500" /><div className="min-w-0 flex-1 overflow-hidden"><Ps text={`CCCD: ${p.cccd}`} isActive={!0} className="text-xs font-bold text-slate-700 dark:text-slate-300" /></div></div>}</div>}</div>{p && <div ref={Rr} onClick={t => t.stopPropagation()} className={c("absolute right-full top-1/2 -translate-y-1/2 mr-3 w-60 p-4 rounded-2xl bg-[#fbf8f2] dark:bg-[#1c1916] shadow-2xl border-2 border-[#8b6f47]/30 dark:border-[#d4a574]/30 transition-all duration-300 z-[9999] text-left text-slate-800 dark:text-slate-100 partner-popout-container", sr ? "pointer-events-auto opacity-100 translate-x-0" : "pointer-events-none opacity-0 translate-x-2")}><div className="border-b border-[#8b6f47]/20 dark:border-[#d4a574]/20 pb-2 mb-2.5"><div className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8b6f47] dark:text-[#d4a574]">LỊCH SỬ GIAO DỊCH</div></div><div className="flex bg-[#8b6f47]/10 dark:bg-[#d4a574]/10 p-0.5 rounded-xl mb-2.5"><button onClick={() => Kt("debt")} className={c("flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all", Ne === "debt" ? "bg-white dark:bg-slate-800 text-[#2d5016] dark:text-emerald-400 shadow-sm" : "text-[#8b6f47] dark:text-[#d4a574]/70 hover:text-[#2d5016]")}>Mua nợ</button><button onClick={() => Kt("cash")} className={c("flex-1 py-1 rounded-lg text-[9px] font-black uppercase transition-all", Ne === "cash" ? "bg-white dark:bg-slate-800 text-[#2d5016] dark:text-emerald-400 shadow-sm" : "text-[#8b6f47] dark:text-[#d4a574]/70 hover:text-[#2d5016]")}>Mua tiền</button></div>{Xs ? <div className="flex items-center gap-2 py-3 font-black uppercase text-[10px] tracking-wider text-[#8b6f47] dark:text-[#d4a574]"><Un size={14} className="animate-spin text-[#2d5016] dark:text-emerald-400" /><span>Đang tải...</span></div> : (Ne === "debt" ? st : nt) ? <div onClick={() => {
                                 const t = Ne === "debt" ? st : nt;
                                 t && t.obj && (mr(t.obj), Yt(!0));
                               }} className="space-y-2 py-1.5 cursor-pointer hover:bg-[#8b6f47]/10 dark:hover:bg-white/5 rounded-xl p-2 transition-all active:scale-[0.98] border border-transparent hover:border-[#8b6f47]/20"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-[#8b6f47]/10 dark:bg-[#d4a574]/15 flex items-center justify-center shrink-0"><Comp_oa size={15} className="text-[#8b6f47] dark:text-[#d4a574]" /></div><div><div className="text-[8px] font-black uppercase tracking-wider text-slate-400">SỐ TIỀN</div><div className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase">{(() => {
@@ -6498,7 +6554,128 @@ function a0({
                   </button>
                 </x.div>
               </Fn>
-            )}</P><P>{historyPartner && <PartnerHistoryModal isOpen={!!historyPartner} partner={historyPartner} onClose={() => setHistoryPartner(null)} />}</P><Fn><POSHistoryPanel context="POS" defaultType="Sale" partner={p} isOpen={isHistoryPanelOpen} onClose={() => setIsHistoryPanelOpen(!1)} onAddToCart={t => {
+            )}</P><P>{historyPartner && <PartnerHistoryModal isOpen={!!historyPartner} partner={historyPartner} onClose={() => setHistoryPartner(null)} />}</P>
+
+            {posProductActionMenu && (
+              <ActionContextMenu
+                isOpen={Boolean(posProductActionMenu)}
+                position={{ x: posProductActionMenu.x, y: posProductActionMenu.y }}
+                onClose={() => setPosProductActionMenu(null)}
+                title={posProductActionMenu.product.name}
+                subtitle={`Mã: ${posProductActionMenu.product.code || '---'} | Đơn vị: ${Ae(posProductActionMenu.product.unit)} | Giá bán: ${z(posProductActionMenu.product.sale_price || 0)}`}
+                icon={ko}
+                badge={posProductActionMenu.product.is_active !== false ? 'Đang bán' : 'Tạm ngưng'}
+                badgeColor={posProductActionMenu.product.is_active !== false ? 'emerald' : 'amber'}
+                items={[
+                  {
+                    label: 'Sửa sản phẩm',
+                    icon: Edit2Icon,
+                    highlight: true,
+                    onClick: () => {
+                      Vt(posProductActionMenu.product);
+                      vt(true);
+                    }
+                  },
+                  posProductActionMenu.cartItemIndex === undefined ? {
+                    label: 'Thêm vào giỏ hàng',
+                    icon: uo,
+                    onClick: () => {
+                      const prod = posProductActionMenu.product;
+                      const prc = R[prod.id] !== undefined ? R[prod.id] : Te === "Wholesale" && prod.bulk_price || prod.sale_price || 0;
+                      ia(prod, 1, prc);
+                    }
+                  } : null,
+                  {
+                    divider: true
+                  },
+                  {
+                    label: 'Sao chép tên sản phẩm',
+                    icon: Pn,
+                    copyText: posProductActionMenu.product.name
+                  },
+                  posProductActionMenu.product.code ? {
+                    label: `Sao chép mã: ${posProductActionMenu.product.code}`,
+                    icon: TagIcon,
+                    copyText: posProductActionMenu.product.code
+                  } : null,
+                  posProductActionMenu.cartItemIndex !== undefined ? {
+                    divider: true
+                  } : null,
+                  posProductActionMenu.cartItemIndex !== undefined ? {
+                    label: 'Xóa khỏi giỏ hàng',
+                    icon: so,
+                    danger: true,
+                    onClick: () => {
+                      bl(posProductActionMenu.cartItemIndex);
+                    }
+                  } : null
+                ].filter(Boolean)}
+              />
+            )}
+
+            {posPartnerActionMenu && (
+              <ActionContextMenu
+                isOpen={Boolean(posPartnerActionMenu)}
+                position={{ x: posPartnerActionMenu.x, y: posPartnerActionMenu.y }}
+                onClose={() => setPosPartnerActionMenu(null)}
+                title={posPartnerActionMenu.partner.name}
+                subtitle={`SĐT: ${posPartnerActionMenu.partner.phone || 'Chưa có'} | Dư nợ: ${vl(posPartnerActionMenu.partner.debt_balance || 0)}`}
+                icon={Qn}
+                badge={posPartnerActionMenu.partner.is_customer && posPartnerActionMenu.partner.is_supplier ? 'Khách & NCC' : posPartnerActionMenu.partner.is_supplier ? 'Nhà cung cấp' : 'Khách hàng'}
+                badgeColor={posPartnerActionMenu.partner.is_supplier ? 'amber' : 'emerald'}
+                items={[
+                  {
+                    label: 'Sửa thông tin đối tác',
+                    icon: Edit2Icon,
+                    highlight: true,
+                    onClick: () => {
+                      fr(posPartnerActionMenu.partner);
+                      Oa(true);
+                    }
+                  },
+                  {
+                    label: 'Lịch sử mua hàng / Công nợ',
+                    icon: ti,
+                    onClick: () => {
+                      setHistoryPartner(posPartnerActionMenu.partner);
+                    }
+                  },
+                  {
+                    divider: true
+                  },
+                  {
+                    label: 'Sao chép tên đối tác',
+                    icon: Pn,
+                    copyText: posPartnerActionMenu.partner.name
+                  },
+                  posPartnerActionMenu.partner.phone ? {
+                    label: `Sao chép SĐT: ${posPartnerActionMenu.partner.phone}`,
+                    icon: Jn,
+                    copyText: posPartnerActionMenu.partner.phone
+                  } : null,
+                  posPartnerActionMenu.partner.cccd ? {
+                    label: `Sao chép CCCD: ${posPartnerActionMenu.partner.cccd}`,
+                    icon: Po,
+                    copyText: posPartnerActionMenu.partner.cccd
+                  } : null,
+                  {
+                    divider: true
+                  },
+                  {
+                    label: 'Bỏ chọn đối tác',
+                    icon: Xn,
+                    danger: true,
+                    onClick: () => {
+                      if (g === "remote_inspect") Aa(null);
+                      else F(null);
+                      Ge("");
+                    }
+                  }
+                ].filter(Boolean)}
+              />
+            )}
+
+            <Fn><POSHistoryPanel context="POS" defaultType="Sale" partner={p} isOpen={isHistoryPanelOpen} onClose={() => setIsHistoryPanelOpen(!1)} onAddToCart={t => {
               const a = (T || []).find(r => r.id === t.id) || t,
                 r = t.last_price !== void 0 ? t.last_price : R[a.id] !== void 0 ? R[a.id] : Te === "Wholesale" && a.bulk_price || a.sale_price || 0;
               He({

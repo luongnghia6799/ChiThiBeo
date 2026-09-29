@@ -56,7 +56,7 @@ call npm run tauri:build
 if %ERRORLEVEL% NEQ 0 goto :error_tauri
 
 echo.
-echo [*] Buoc 6: Tu dong tai ban cai dat len GitHub Release (lyangpos_thi)...
+echo [*] Buoc 6: Tu dong tai ban cai dat len GitHub Release (ChiThiBeo)...
 call node upload_release.js
 
 echo.

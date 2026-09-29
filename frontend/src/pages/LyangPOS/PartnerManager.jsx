@@ -3,12 +3,13 @@ import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import CustomSelect from '../../components/CustomSelect';
 import { m, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, Search, Phone, MapPin, Tag, X, FileUp, Download, Users, ChevronUp, ChevronDown, ArrowUpDown, Droplets, Sprout, Wheat, CreditCard, FileText, ShoppingCart, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Phone, MapPin, Tag, X, FileUp, Download, Users, ChevronUp, ChevronDown, ArrowUpDown, Droplets, Sprout, Wheat, CreditCard, FileText, ShoppingCart, Check, Copy, User, History } from 'lucide-react';
 import { formatNumber, formatDebt } from '../../lib/utils';
 import { cn } from '../../lib/utils';
 import Toast from '../../components/Toast';
 import PartnerEditModal from '../../components/PartnerEditModal';
 import PartnerHistoryModal from '../../components/PartnerHistoryModal';
+import ActionContextMenu from '../../components/ActionContextMenu';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import Portal from '../../components/Portal';
@@ -66,6 +67,7 @@ export default function PartnerManager() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPartner, setEditingPartner] = useState(null);
     const [historyPartner, setHistoryPartner] = useState(null);
+    const [actionMenu, setActionMenu] = useState(null); // { x, y, partner }
 
     const location = useLocation();
     // Search states
@@ -514,8 +516,17 @@ export default function PartnerManager() {
                                     return (
                                         <tr
                                             key={p.id}
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setActionMenu({
+                                                    x: e.clientX,
+                                                    y: e.clientY,
+                                                    partner: p
+                                                });
+                                            }}
                                             className={cn(
-                                                "hover:bg-[#2d5016]/5 dark:hover:bg-slate-800/40 transition-all duration-200 border-b border-border",
+                                                "hover:bg-[#2d5016]/5 dark:hover:bg-slate-800/40 transition-all duration-200 border-b border-border cursor-pointer",
                                                 isSelected ? "bg-emerald-50/30 dark:bg-emerald-950/20" : ""
                                             )}
                                         >
@@ -698,6 +709,64 @@ export default function PartnerManager() {
                     />
                 )}
             </AnimatePresence>
+
+            {actionMenu && (
+                <ActionContextMenu
+                    isOpen={Boolean(actionMenu)}
+                    position={{ x: actionMenu.x, y: actionMenu.y }}
+                    onClose={() => setActionMenu(null)}
+                    title={actionMenu.partner.name}
+                    subtitle={`SĐT: ${actionMenu.partner.phone || 'Chưa có'} | Nợ: ${formatDebt(actionMenu.partner.debt_balance)}`}
+                    icon={User}
+                    badge={actionMenu.partner.is_customer && actionMenu.partner.is_supplier ? 'Khách & NCC' : actionMenu.partner.is_supplier ? 'Nhà cung cấp' : 'Khách hàng'}
+                    badgeColor={actionMenu.partner.is_supplier ? 'amber' : 'emerald'}
+                    items={[
+                        {
+                            label: 'Sửa thông tin đối tác',
+                            icon: Edit2,
+                            highlight: true,
+                            onClick: () => openEdit(actionMenu.partner)
+                        },
+                        {
+                            label: 'Lịch sử mua hàng / Công nợ',
+                            icon: History,
+                            onClick: () => setHistoryPartner(actionMenu.partner)
+                        },
+                        actionMenu.partner.is_customer ? {
+                            label: 'Bảng giá riêng',
+                            icon: Tag,
+                            onClick: () => openPriceList(actionMenu.partner)
+                        } : null,
+                        {
+                            divider: true
+                        },
+                        {
+                            label: 'Sao chép tên đối tác',
+                            icon: Copy,
+                            copyText: actionMenu.partner.name
+                        },
+                        actionMenu.partner.phone ? {
+                            label: `Sao chép SĐT: ${actionMenu.partner.phone}`,
+                            icon: Phone,
+                            copyText: actionMenu.partner.phone
+                        } : null,
+                        actionMenu.partner.cccd ? {
+                            label: `Sao chép CCCD: ${actionMenu.partner.cccd}`,
+                            icon: CreditCard,
+                            copyText: actionMenu.partner.cccd
+                        } : null,
+                        {
+                            divider: true
+                        },
+                        {
+                            label: 'Xóa đối tác',
+                            icon: Trash2,
+                            danger: true,
+                            onClick: () => handleDelete(actionMenu.partner.id)
+                        }
+                    ].filter(Boolean)}
+                />
+            )}
 
             <AnimatePresence>{toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}</AnimatePresence>
 

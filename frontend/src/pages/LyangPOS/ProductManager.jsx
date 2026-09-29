@@ -7,11 +7,12 @@ import {
     Plus, Edit2, Edit3, Trash2, Search, FileDown, Upload, Package, X,
     ChevronUp, ChevronDown, ArrowUpDown, Wheat,
     FileText, Save, AlertTriangle, Clock, Boxes, Database, XCircle, Sparkles, Ban, Check,
-    SprayCan, Sprout, Leaf, Droplets, FlaskConical, Bug, Hammer, Fuel, Truck, Archive, Layers, Tags, ShoppingCart
+    SprayCan, Sprout, Leaf, Droplets, FlaskConical, Bug, Hammer, Fuel, Truck, Archive, Layers, Tags, ShoppingCart, Copy
 } from 'lucide-react';
 import { formatNumber, isNearExpiry, isExpired, normalizeUOM, cn, removeAccents } from '../../lib/utils';
 import { m, AnimatePresence } from 'framer-motion';
 import ProductEditModal from '../../components/ProductEditModal';
+import ActionContextMenu from '../../components/ActionContextMenu';
 import Toast from '../../components/Toast';
 import ConfirmModal from '../../components/ConfirmModal';
 import LoadingOverlay from '../../components/LoadingOverlay';
@@ -291,6 +292,7 @@ export default function ProductManager() {
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const [actionMenu, setActionMenu] = useState(null); // { x, y, product }
 
     // Search states
     const [searchTerm, setSearchTerm] = useState(() => location.state?.search || '');
@@ -827,7 +829,15 @@ export default function ProductManager() {
                                                     initial={{ opacity: 0, y: 4 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.02 }}
-                                                    onDoubleClick={() => openEdit(p)}
+                                                    onContextMenu={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setActionMenu({
+                                                            x: e.clientX,
+                                                            y: e.clientY,
+                                                            product: p
+                                                        });
+                                                    }}
                                                     className={cn(
                                                         "group transition-all duration-300 cursor-pointer border-b border-[#d4a574]/5",
                                                         isSelected ? "bg-[#d4a574]/10 dark:bg-[#4a7c59]/10" : "hover:bg-[#faf8f3] dark:hover:bg-slate-800/40",
@@ -952,6 +962,49 @@ export default function ProductManager() {
                 onClose={() => setIsModalOpen(false)}
                 onSave={fetchProducts}
             />
+
+            {actionMenu && (
+                <ActionContextMenu
+                    isOpen={Boolean(actionMenu)}
+                    position={{ x: actionMenu.x, y: actionMenu.y }}
+                    onClose={() => setActionMenu(null)}
+                    title={actionMenu.product.name}
+                    subtitle={`Mã: ${actionMenu.product.code || '---'} | Đơn vị: ${normalizeUOM(actionMenu.product.unit)}`}
+                    icon={Package}
+                    badge={actionMenu.product.is_active ? 'Đang bán' : 'Tạm ngưng'}
+                    badgeColor={actionMenu.product.is_active ? 'emerald' : 'amber'}
+                    items={[
+                        {
+                            label: 'Sửa sản phẩm',
+                            icon: Edit2,
+                            highlight: true,
+                            onClick: () => openEdit(actionMenu.product)
+                        },
+                        {
+                            divider: true
+                        },
+                        {
+                            label: 'Sao chép tên sản phẩm',
+                            icon: Copy,
+                            copyText: actionMenu.product.name
+                        },
+                        actionMenu.product.code ? {
+                            label: `Sao chép mã: ${actionMenu.product.code}`,
+                            icon: Tags,
+                            copyText: actionMenu.product.code
+                        } : null,
+                        {
+                            divider: true
+                        },
+                        {
+                            label: 'Xóa sản phẩm',
+                            icon: Trash2,
+                            danger: true,
+                            onClick: () => handleDelete(actionMenu.product.id)
+                        }
+                    ].filter(Boolean)}
+                />
+            )}
 
             <AnimatePresence>
                 <QuickEditModal

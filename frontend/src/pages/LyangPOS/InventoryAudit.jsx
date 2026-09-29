@@ -10,6 +10,7 @@ import {
 import { formatNumber, cn } from '../../lib/utils';
 import ProductEditModal from '../../components/ProductEditModal';
 import Toast from '../../components/Toast';
+import ActionContextMenu from '../../components/ActionContextMenu';
 import { useQueryClient } from '@tanstack/react-query';
 import CategoryIcon from '../../components/CategoryIcon';
 
@@ -18,6 +19,7 @@ export default function InventoryAudit() {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [productActionMenu, setProductActionMenu] = useState({ isOpen: false, x: 0, y: 0, product: null });
     const [editingProduct, setEditingProduct] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [toast, setToast] = useState(null);
@@ -457,10 +459,10 @@ export default function InventoryAudit() {
                                                             <div className="flex-1 pr-4">
                                                                 <div 
                                                                     className="font-black text-xs text-slate-800 dark:text-slate-100 uppercase group-hover/item:text-primary transition-colors flex items-center gap-2 cursor-pointer"
-                                                                    onDoubleClick={(e) => {
+                                                                    onContextMenu={(e) => {
+                                                                        e.preventDefault();
                                                                         e.stopPropagation();
-                                                                        setEditingProduct(p);
-                                                                        setIsProductModalOpen(true);
+                                                                        setProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p });
                                                                     }}
                                                                 >
                                                                     {p.name}
@@ -503,11 +505,12 @@ export default function InventoryAudit() {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div 
                                                     className="font-black text-xs text-slate-800 dark:text-slate-100 uppercase truncate pr-4 cursor-pointer hover:text-primary transition-colors"
-                                                    onDoubleClick={() => {
+                                                    onContextMenu={(e) => {
                                                         const p = allProducts.find(x => x.id === item.product_id);
                                                         if (p) {
-                                                            setEditingProduct(p);
-                                                            setIsProductModalOpen(true);
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p });
                                                         }
                                                     }}
                                                 >
@@ -664,9 +667,10 @@ export default function InventoryAudit() {
                                                                     <div className="flex items-center gap-2">
                                                                         <div 
                                                                         className="font-black text-sm text-slate-800 dark:text-white uppercase cursor-pointer hover:text-primary transition-colors"
-                                                                        onDoubleClick={() => {
-                                                                            setEditingProduct(product);
-                                                                            setIsProductModalOpen(true);
+                                                                        onContextMenu={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            setProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: product });
                                                                         }}
                                                                     >
                                                                         {product.name}
@@ -729,11 +733,12 @@ export default function InventoryAudit() {
                                                         <td className="p-6">
                                                             <div 
                                                                 className="font-black text-sm text-slate-800 dark:text-white uppercase cursor-pointer hover:text-primary transition-colors"
-                                                                onDoubleClick={() => {
+                                                                onContextMenu={(e) => {
                                                                     const p = allProducts.find(x => x.id === item.product_id);
                                                                     if (p) {
-                                                                        setEditingProduct(p);
-                                                                        setIsProductModalOpen(true);
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setProductActionMenu({ isOpen: true, x: e.clientX, y: e.clientY, product: p });
                                                                     }
                                                                 }}
                                                             >
@@ -1256,6 +1261,36 @@ export default function InventoryAudit() {
                     setSearchTerm('');
                     setIsProductModalOpen(false);
                 }}
+            />
+
+            <ActionContextMenu
+                isOpen={productActionMenu.isOpen}
+                position={{ x: productActionMenu.x, y: productActionMenu.y }}
+                onClose={() => setProductActionMenu(prev => ({ ...prev, isOpen: false }))}
+                title={productActionMenu.product?.name || "Sản phẩm"}
+                subtitle={`Mã: ${productActionMenu.product?.code || '---'} • ĐVT: ${productActionMenu.product?.unit || '---'} • Tồn: ${productActionMenu.product?.stock ?? '---'}`}
+                badge="Sản phẩm"
+                badgeColor="emerald"
+                items={[
+                    {
+                        label: "Sửa thông tin sản phẩm",
+                        sublabel: "Xem và chỉnh sửa thông tin chi tiết",
+                        onClick: () => {
+                            if (productActionMenu.product) {
+                                setEditingProduct(productActionMenu.product);
+                                setIsProductModalOpen(true);
+                            }
+                        }
+                    },
+                    {
+                        label: "Sao chép tên sản phẩm",
+                        copyText: productActionMenu.product?.name || ""
+                    },
+                    {
+                        label: "Sao chép mã sản phẩm",
+                        copyText: productActionMenu.product?.code || ""
+                    }
+                ]}
             />
 
             <AnimatePresence>

@@ -2396,33 +2396,91 @@ def update_partner(id):
 def recalculate_partner_debt_internal(id):
     partner = Partner.query.get(id)
     if not partner: return
-    # Sum of all Debt orders
-    sale_debt = db.session.query(db.func.sum(Order.total_amount)).filter(Order.partner_id == id, Order.payment_method == 'Debt', Order.type == 'Sale').scalar() or 0
-    purchase_debt = db.session.query(db.func.sum(Order.total_amount)).filter(Order.partner_id == id, Order.payment_method == 'Debt', Order.type == 'Purchase').scalar() or 0
-    
-    # Vouchers (Filter out auto-generated vouchers for Cash payment method, as they do not affect debt)
-    cash_receipts = db.session.query(db.func.sum(CashVoucher.amount)).filter(CashVoucher.partner_id == id, CashVoucher.type == 'Receipt', CashVoucher.source != 'auto').scalar() or 0
-    cash_payments = db.session.query(db.func.sum(CashVoucher.amount)).filter(CashVoucher.partner_id == id, CashVoucher.type == 'Payment', CashVoucher.source != 'auto').scalar() or 0
-    debt_increases = db.session.query(db.func.sum(CashVoucher.amount)).filter(CashVoucher.partner_id == id, CashVoucher.type == 'DebtIncrease', CashVoucher.source != 'auto').scalar() or 0
-    
-    # Bank Transactions - Filter out non-debt payments
-    bank_receipts = db.session.query(db.func.sum(BankTransaction.amount))\
-        .outerjoin(Order, BankTransaction.order_id == Order.id)\
-        .filter(BankTransaction.partner_id == id, BankTransaction.type == 'Deposit')\
-        .filter(db.or_(Order.id == None, Order.payment_method == 'Debt'))\
-        .scalar() or 0
-        
-    bank_payments = db.session.query(db.func.sum(BankTransaction.amount))\
-        .outerjoin(Order, BankTransaction.order_id == Order.id)\
-        .filter(BankTransaction.partner_id == id, BankTransaction.type == 'Withdrawal')\
-        .filter(db.or_(Order.id == None, Order.payment_method == 'Debt'))\
-        .scalar() or 0
-    
-    total_receipts = cash_receipts + bank_receipts
-    total_payments = cash_payments + bank_payments + debt_increases
-    
-    partner.debt_balance = (sale_debt - purchase_debt) - (total_receipts - total_payments)
+
+    # 1. Fetch all transactions for this partner
+    all_orders = Order.query.filter_by(partner_id=id).all()
+    all_vouchers = CashVoucher.query.filter_by(partner_id=id).filter(CashVoucher.source != 'auto').all()
+    all_banks = BankTransaction.query.filter_by(partner_id=id).all()
+
+    timeline = []
+    for o in all_orders:
+        timeline.append({
+            'type': 'Order',
+            'date': o.date or datetime.min,
+            'is_debt': o.payment_method == 'Debt',
+            'obj': o
+        })
+    for v in all_vouchers:
+        timeline.append({
+            'type': 'Voucher',
+            'date': v.date or datetime.min,
+            'is_debt': True,
+            'obj': v
+        })
+    for b in all_banks:
+        is_debt_payment = True
+        if b.order_id:
+            linked_order = next((o for o in all_orders if o.id == b.order_id), None)
+            if linked_order and linked_order.payment_method != 'Debt':
+                is_debt_payment = False
+        timeline.append({
+            'type': 'Bank',
+            'date': b.date or datetime.min,
+            'is_debt': is_debt_payment,
+            'obj': b
+        })
+
+    def get_sort_key(item):
+        d = item['date']
+        is_nodau = item['type'] == 'Order' and (getattr(item['obj'], 'display_id', '') in ['#NODAU', 'NODAU'] or 'NODAU' in str(getattr(item['obj'], 'display_id', '')).upper())
+        if is_nodau:
+            priority = 0
+        elif item['type'] == 'Order':
+            priority = 1
+        elif item['type'] == 'Voucher':
+            priority = 2
+        else:
+            priority = 3
+        item_id = getattr(item['obj'], 'id', 0) or 0
+        return (d, priority, item_id)
+
+    timeline.sort(key=get_sort_key)
+
+    balance = 0.0
+    for item in timeline:
+        if item['type'] == 'Order':
+            o = item['obj']
+            # Debt before this order is the current running balance
+            o.old_debt = balance
+            if item['is_debt']:
+                if o.type == 'Sale':
+                    balance += float(o.total_amount or 0)
+                else: # Purchase
+                    balance -= float(o.total_amount or 0)
+        elif item['type'] == 'Voucher':
+            v = item['obj']
+            if v.type == 'Receipt':
+                balance -= float(v.amount or 0)
+            elif v.type in ['Payment', 'DebtIncrease']:
+                balance += float(v.amount or 0)
+        elif item['type'] == 'Bank':
+            b = item['obj']
+            if item['is_debt']:
+                if b.type == 'Deposit':
+                    balance -= float(b.amount or 0)
+                elif b.type == 'Withdrawal':
+                    balance += float(b.amount or 0)
+
+    partner.debt_balance = balance
     db.session.commit()
+
+def recalculate_all_partners_debt():
+    try:
+        partners = Partner.query.all()
+        for p in partners:
+            recalculate_partner_debt_internal(p.id)
+    except Exception as e:
+        print(f"Error recalculating all partners debt: {e}")
 
 def recalculate_product_cost_price(product_id):
     """
@@ -5061,12 +5119,12 @@ def update_order(id):
         sync_order_amount_paid(order.id)
         
         # Final Recalculate to ensure everything is perfect
+        if old_partner and old_partner.id != order.partner_id:
+            recalculate_partner_debt_internal(old_partner.id)
         if order.partner_id:
             recalculate_partner_debt_internal(order.partner_id)
             
-        order_dict = order.to_dict()
-        order_dict['old_debt'] = old_debt
-        return jsonify(order_dict)
+        return jsonify(order.to_dict())
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
@@ -8540,6 +8598,7 @@ if __name__ == "__main__":
         db.create_all()
         ensure_schema(db.engine)
         initialize_stock_batches(db.engine)
+        recalculate_all_partners_debt()
     is_bundle = getattr(sys, 'frozen', False)
     local_ip = get_local_ip()
 

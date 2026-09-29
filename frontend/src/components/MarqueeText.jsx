@@ -8,6 +8,7 @@ export const MarqueeText = ({
   active = false,
   onClick,
   onDoubleClick,
+  onContextMenu,
   title
 }) => {
   const containerRef = useRef(null);
@@ -54,6 +55,7 @@ export const MarqueeText = ({
       ref={containerRef}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={onContextMenu}
       title={title || text}
       style={style}
       className={`w-full overflow-hidden whitespace-nowrap relative select-none py-1 leading-normal ${className}`}
